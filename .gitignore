@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Folders and files to ignore
+bin/
+pyvenv.cfg
