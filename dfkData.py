@@ -9,7 +9,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'}
 
 # Max heroid upto which we wish to fetch hero data
-maxHeroId = 100
+maxHeroId = 90000
 
 # header row
 titles = ['heroID', 'userName', 'walletAddr' 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
