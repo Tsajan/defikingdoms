@@ -131,3 +131,4 @@ dmypy.json
 # Folders and files to ignore
 bin/
 pyvenv.cfg
+share/
