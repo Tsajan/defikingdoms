@@ -48,6 +48,15 @@ def fetchHeroes(heroId):
         addr = "N/A"
 
     heroValues = [heroId, userName, addr, nftMainClass, nftLevel]
+
+    # nftLevel --> Gen 0 validates that there is no summoner or assistant
+    # thus these values should be NULL
+    genZeroString = 'Gen 0'
+    if(genZeroString in nftLevel):
+        # hard-coded append None twice, one for Summoner ID, another for Assistant
+        heroValues.append(None) 
+        heroValues.append(None)
+
     for tdata in allTables:
         rowsData = tdata.find('td').text
         if rowsData.startswith('\n'):
