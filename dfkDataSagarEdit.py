@@ -1,7 +1,9 @@
+from email import iterators
 import json
 import requests
 import time
-from multiprocessing import Manager, Pool
+from multiprocessing import Pool, Manager
+import pandas as pd
 from bs4 import BeautifulSoup
 from pyhmy import account
 import csv
@@ -16,11 +18,11 @@ main_net = 'https://rpc.s0.t.hmny.io'
 main_net_shard_0 = 'https://rpc.s0.t.hmny.io'
 
 # initialize an empty token for allTokens variable
+# allTokens = []
 manager = Manager()
 allTokens = manager.list()
-
 # Max heroid upto which we wish to fetch hero data
-maxHeroId = 100
+maxHeroId = 10
 
 # header row
 titles = ['heroID', 'userName', 'walletAddr', 'tokenData', 'walletONEbalance', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
@@ -36,6 +38,7 @@ def fetchAccountBalance(walletAddr):
 
 def getSingleTokenDetails(tokenAddr):
     # need to loop through all available tokens
+    # global allTokens
     tokenDetail = {}
     for token in allTokens:
         if(token['address'] == tokenAddr):
@@ -48,7 +51,6 @@ def getSingleTokenDetails(tokenAddr):
 
 # Function that will retrieve all the tokens that have been deployed in Harmony Net
 def getAllHRC20TokensInHarmonyNet():
-    global allTokens
     apiURL = f"https://explorer-v2-api.hmny.io/v0/erc20/"
     try:
         res = requests.get(apiURL, headers=headers)
@@ -61,8 +63,9 @@ def getAllHRC20TokensInHarmonyNet():
     
     jsonString = res.text
     allTokensJson = json.loads(jsonString)
-    for tk in allTokensJson:
-        allTokens.append(tk)
+    for token in allTokensJson:
+        allTokens.append(token)
+
     return allTokens
 
 # Function to retrieve the entire token details contained in a wallet
@@ -101,17 +104,20 @@ def getWalletTokenDetails(walletAddr):
         # additional layer of verification
         if(wToken['ownerAddress'] == walletAddr):
             singleTokenDetail = getSingleTokenDetails(wToken['tokenAddress'])
+            # print("Single token detail", singleTokenDetail)
+            # print("length of token detail is: ", len(singleTokenDetail.keys()))
             
             # Processing for decimal points of single token
             if(singleTokenDetail != {}):
                 tokenDecimalPoints = singleTokenDetail['decimals']
                 actualBalance = int(containedBalance) / (pow(10,tokenDecimalPoints))
         
-                # get the token symbol for that particular token
-                tokenSymbol = singleTokenDetail['symbol']
+            # get the token symbol for that particular token
+            tokenSymbol = singleTokenDetail['symbol']
+            print(str(actualBalance) + ' ' + tokenSymbol + ';')
 
-        # create a string that contains token details in a wallet, separated by a ;
-        walletTokenDetails += str(actualBalance) + ' ' + tokenSymbol + ';'
+            # create a string that contains token details in a wallet, separated by a ;
+            walletTokenDetails += str(actualBalance) + ' ' + tokenSymbol + ';'
 
     return walletTokenDetails
 
@@ -170,12 +176,11 @@ def fetchHeroes(heroId):
 
     print(heroValues)
 
-    with open("dfkHeroData.csv", 'a') as file:
+    with open("nftTopUsers.csv", 'a') as file:
         writer = csv.writer(file)
         writer.writerow(heroValues)
 
 def main():
-    global allTokens
 
     # create a pool of 20 processes to run multiprocessing
     pool = Pool(processes=20)
@@ -184,8 +189,9 @@ def main():
 
     print("Fetching all tokens deployed on the Harmony net")
     getAllHRC20TokensInHarmonyNet()
+
     # write the header row
-    with open("dfkHeroData.csv", "w") as file:
+    with open("nftTopUsers.csv", "w") as file:
         writer = csv.writer(file)
         writer.writerow(titles)
 
