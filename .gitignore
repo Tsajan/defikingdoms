@@ -133,3 +133,7 @@ bin/
 pyvenv.cfg
 share/
 pyhmy/
+mongodb/database
+
+# Files to ignore
+dfkHeroData.csv

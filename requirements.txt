@@ -35,6 +35,7 @@ ptyprocess==0.7.0
 pycparser==2.21
 pycryptodome==3.14.1
 -e git+https://github.com/harmony-one/pyhmy.git@668d7ef756e4fefe4621f435bb9a3e37cbeb82d9#egg=pyhmy
+pymongo==4.0.2
 pyOpenSSL==22.0.0
 pyparsing==3.0.7
 python-dateutil==2.8.2

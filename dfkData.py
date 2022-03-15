@@ -3,7 +3,10 @@ import requests
 import time
 from multiprocessing import Manager, Pool
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
+from pymongo import DeleteMany
 from pyhmy import account
+import pandas as pd
 import csv
 
 # Header information to be used while scraping
@@ -20,10 +23,10 @@ manager = Manager()
 allTokens = manager.list()
 
 # Max heroid upto which we wish to fetch hero data
-maxHeroId = 100
+maxHeroId = 400
 
 # header row
-titles = ['heroID', 'userName', 'walletAddr', 'tokenData', 'walletONEbalance', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
+titles = ['heroID', 'userName', 'walletAddr', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
           'Gender', 'Element', 'Xp', 'Level', 'Hp', 'Mp', 'Sp', 'Stamina', 'Summons', 'Stat boost1', 'Stat boost2',
           'Strength', 'Endurance', 'Wisdom', 'Vitality', 'Dexterity', 'Intelligence', 'Luck', 'Agility', 'Mining',
           'Gardening', 'Foraging', 'Fishing']
@@ -145,13 +148,16 @@ def fetchHeroes(heroId):
         userName = "---"
         addr = "N/A"
 
+    # Comment out the portion for token Data retrieval
+    """
     tokenData = ''
     walletONEbalance = 0
     if(addr != "N/A"):
         tokenData = getWalletTokenDetails(addr)
         walletONEbalance = fetchAccountBalance(addr)
+    """
 
-    heroValues = [heroId, userName, addr, tokenData, walletONEbalance, nftMainClass, nftLevel]
+    heroValues = [heroId, userName, addr, nftMainClass, nftLevel]
 
     # nftLevel --> Gen 0 validates that there is no summoner or assistant
     # thus these values should be NULL
@@ -174,6 +180,24 @@ def fetchHeroes(heroId):
         writer = csv.writer(file)
         writer.writerow(heroValues)
 
+def mongoimport(csv_path, db_name, collection_name, db_url='localhost', db_port=27017):
+    # db connection
+    client = MongoClient(db_url, db_port)
+    db = client[db_name]
+    collection_name = db[collection_name]
+
+    # read from JSON file
+    data = pd.read_csv(csv_path)
+    payload = json.loads(data.to_json(orient='records'))
+
+    # remove any pre-existing records
+    collection_name.bulk_write([DeleteMany({})])
+
+    # insert the JSON data into the table
+    collection_name.insert_many(payload)
+    dcount = collection_name.count_documents({})
+    print("Records inserted: " + str(dcount))
+
 def main():
     global allTokens
 
@@ -182,8 +206,9 @@ def main():
     startTime = time.time()
     print("Program started at: ", startTime)
 
-    print("Fetching all tokens deployed on the Harmony net")
-    getAllHRC20TokensInHarmonyNet()
+    # print("Fetching all tokens deployed on the Harmony net")
+    # getAllHRC20TokensInHarmonyNet()
+
     # write the header row
     with open("dfkHeroData.csv", "w") as file:
         writer = csv.writer(file)
@@ -193,6 +218,10 @@ def main():
     pool.close()
 
     endTime = time.time()
+
+    # insert records into local mongodb
+    mongoimport('dfkHeroData.csv', 'defiKingdoms', 'heroes')
+
     print("Program ended at: ", endTime)
     elapsedTime = endTime - startTime
     print("Program running time: ", elapsedTime, " seconds")
