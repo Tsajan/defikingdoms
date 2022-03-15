@@ -18,12 +18,9 @@ headers = {
 main_net = 'https://rpc.s0.t.hmny.io'
 main_net_shard_0 = 'https://rpc.s0.t.hmny.io'
 
-# initialize an empty token for allTokens variable
-manager = Manager()
-allTokens = manager.list()
 
 # Max heroid upto which we wish to fetch hero data
-maxHeroId = 400
+maxHeroId = 100
 
 # header row
 titles = ['heroID', 'userName', 'walletAddr', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
@@ -31,92 +28,6 @@ titles = ['heroID', 'userName', 'walletAddr', 'mainClass', 'Level', 'Summoner', 
           'Strength', 'Endurance', 'Wisdom', 'Vitality', 'Dexterity', 'Intelligence', 'Luck', 'Agility', 'Mining',
           'Gardening', 'Foraging', 'Fishing']
 
-# Function that fetches ONE balance contained by an address
-def fetchAccountBalance(walletAddr):
-    balance = account.get_balance(walletAddr, endpoint=main_net)
-    actualBalance = balance / pow(10, 18) # because DecimalPoint for harmony contract is 18
-    return actualBalance
-
-def getSingleTokenDetails(tokenAddr):
-    # need to loop through all available tokens
-    tokenDetail = {}
-    for token in allTokens:
-        if(token['address'] == tokenAddr):
-            tokenDetail['address'] = token['address']
-            tokenDetail['decimals'] = token['decimals']
-            tokenDetail['symbol'] = token['symbol']
-            tokenDetail['name'] = token['name']
-            return tokenDetail
-    return tokenDetail
-
-# Function that will retrieve all the tokens that have been deployed in Harmony Net
-def getAllHRC20TokensInHarmonyNet():
-    global allTokens
-    apiURL = f"https://explorer-v2-api.hmny.io/v0/erc20/"
-    try:
-        res = requests.get(apiURL, headers=headers)
-    except (requests.ConnectionError, requests.HTTPError, requests.Timeout, requests.TooManyRedirects) as e:
-        print("There was an error processing the request. Please try again later")
-        return
-    
-    if(res.status_code != 200):
-        return
-    
-    jsonString = res.text
-    allTokensJson = json.loads(jsonString)
-    for tk in allTokensJson:
-        allTokens.append(tk)
-    return allTokens
-
-# Function to retrieve the entire token details contained in a wallet
-def fetchTokensInWalletAddress(walletAddr):
-    apiURL = f"https://explorer-v2-api.hmny.io/v0/erc20/address/{walletAddr}/balances"
-    try:
-        res = requests.get(apiURL, headers=headers)
-    except (requests.ConnectionError, requests.HTTPError, requests.Timeout, requests.TooManyRedirects) as e:
-        print("There was an error processing the request. Please try again later")
-        return
-
-    if(res.status_code != 200):
-        return
-
-    jsonString = res.text
-    walletTokens = json.loads(jsonString)
-    return walletTokens
-
-# Function that will return a string listing tokens and its amount contained in a wallet addr
-def getWalletTokenDetails(walletAddr):
-    walletTokenDetails = ''
-
-    # fetch all tokens contained in a wallet address
-    walletTokens = fetchTokensInWalletAddress(walletAddr)
-    try:
-        assert walletTokens != None
-    except AssertionError as e:
-        print("No tokens contained in the wallet")
-        return 'N/A'
-
-    for wToken in walletTokens:
-        actualBalance = 0
-        tokenSymbol = ''
-        containedBalance = wToken['balance']
-        
-        # additional layer of verification
-        if(wToken['ownerAddress'] == walletAddr):
-            singleTokenDetail = getSingleTokenDetails(wToken['tokenAddress'])
-            
-            # Processing for decimal points of single token
-            if(singleTokenDetail != {}):
-                tokenDecimalPoints = singleTokenDetail['decimals']
-                actualBalance = int(containedBalance) / (pow(10,tokenDecimalPoints))
-        
-                # get the token symbol for that particular token
-                tokenSymbol = singleTokenDetail['symbol']
-
-        # create a string that contains token details in a wallet, separated by a ;
-        walletTokenDetails += str(actualBalance) + ' ' + tokenSymbol + ';'
-
-    return walletTokenDetails
 
 # Function that fetches details of a hero
 def fetchHeroes(heroId):
@@ -148,14 +59,6 @@ def fetchHeroes(heroId):
         userName = "---"
         addr = "N/A"
 
-    # Comment out the portion for token Data retrieval
-    """
-    tokenData = ''
-    walletONEbalance = 0
-    if(addr != "N/A"):
-        tokenData = getWalletTokenDetails(addr)
-        walletONEbalance = fetchAccountBalance(addr)
-    """
 
     heroValues = [heroId, userName, addr, nftMainClass, nftLevel]
 
@@ -205,9 +108,6 @@ def main():
     pool = Pool(processes=20)
     startTime = time.time()
     print("Program started at: ", startTime)
-
-    # print("Fetching all tokens deployed on the Harmony net")
-    # getAllHRC20TokensInHarmonyNet()
 
     # write the header row
     with open("dfkHeroData.csv", "w") as file:
