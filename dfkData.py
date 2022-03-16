@@ -5,6 +5,8 @@ from multiprocessing import Manager, Pool
 from bs4 import BeautifulSoup
 from pyhmy import account
 import csv
+from mangodbtest import add_hero_info_to_db
+from tokendetails import *
 
 # Header information to be used while scraping
 headers = {
@@ -23,10 +25,12 @@ allTokens = manager.list()
 maxHeroId = 100
 
 # header row
-titles = ['heroID', 'userName', 'walletAddr', 'tokenData', 'walletONEbalance', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
+titles = ['heroID', 'userName', 'walletAddr', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
           'Gender', 'Element', 'Xp', 'Level', 'Hp', 'Mp', 'Sp', 'Stamina', 'Summons', 'Stat boost1', 'Stat boost2',
           'Strength', 'Endurance', 'Wisdom', 'Vitality', 'Dexterity', 'Intelligence', 'Luck', 'Agility', 'Mining',
           'Gardening', 'Foraging', 'Fishing']
+
+# fetched_wallet_addresses = dict()
 
 # Function that fetches ONE balance contained by an address
 def fetchAccountBalance(walletAddr):
@@ -34,17 +38,7 @@ def fetchAccountBalance(walletAddr):
     actualBalance = balance / pow(10, 18) # because DecimalPoint for harmony contract is 18
     return actualBalance
 
-def getSingleTokenDetails(tokenAddr):
-    # need to loop through all available tokens
-    tokenDetail = {}
-    for token in allTokens:
-        if(token['address'] == tokenAddr):
-            tokenDetail['address'] = token['address']
-            tokenDetail['decimals'] = token['decimals']
-            tokenDetail['symbol'] = token['symbol']
-            tokenDetail['name'] = token['name']
-            return tokenDetail
-    return tokenDetail
+
 
 # Function that will retrieve all the tokens that have been deployed in Harmony Net
 def getAllHRC20TokensInHarmonyNet():
@@ -81,39 +75,6 @@ def fetchTokensInWalletAddress(walletAddr):
     walletTokens = json.loads(jsonString)
     return walletTokens
 
-# Function that will return a string listing tokens and its amount contained in a wallet addr
-def getWalletTokenDetails(walletAddr):
-    walletTokenDetails = ''
-
-    # fetch all tokens contained in a wallet address
-    walletTokens = fetchTokensInWalletAddress(walletAddr)
-    try:
-        assert walletTokens != None
-    except AssertionError as e:
-        print("No tokens contained in the wallet")
-        return 'N/A'
-
-    for wToken in walletTokens:
-        actualBalance = 0
-        tokenSymbol = ''
-        containedBalance = wToken['balance']
-        
-        # additional layer of verification
-        if(wToken['ownerAddress'] == walletAddr):
-            singleTokenDetail = getSingleTokenDetails(wToken['tokenAddress'])
-            
-            # Processing for decimal points of single token
-            if(singleTokenDetail != {}):
-                tokenDecimalPoints = singleTokenDetail['decimals']
-                actualBalance = int(containedBalance) / (pow(10,tokenDecimalPoints))
-        
-                # get the token symbol for that particular token
-                tokenSymbol = singleTokenDetail['symbol']
-
-        # create a string that contains token details in a wallet, separated by a ;
-        walletTokenDetails += str(actualBalance) + ' ' + tokenSymbol + ';'
-
-    return walletTokenDetails
 
 # Function that fetches details of a hero
 def fetchHeroes(heroId):
@@ -145,13 +106,13 @@ def fetchHeroes(heroId):
         userName = "---"
         addr = "N/A"
 
-    tokenData = ''
-    walletONEbalance = 0
-    if(addr != "N/A"):
-        tokenData = getWalletTokenDetails(addr)
-        walletONEbalance = fetchAccountBalance(addr)
+    # tokenData = ''
+    # walletONEbalance = 0
+    # if(addr != "N/A"):
+    #     tokenData = getWalletTokenDetails(addr)
+    #     walletONEbalance = fetchAccountBalance(addr)
 
-    heroValues = [heroId, userName, addr, tokenData, walletONEbalance, nftMainClass, nftLevel]
+    heroValues = [heroId, userName, addr, nftMainClass, nftLevel]
 
     # nftLevel --> Gen 0 validates that there is no summoner or assistant
     # thus these values should be NULL
@@ -173,6 +134,8 @@ def fetchHeroes(heroId):
     with open("dfkHeroData.csv", 'a') as file:
         writer = csv.writer(file)
         writer.writerow(heroValues)
+
+    # add_hero_info_to_db(heroValues)
 
 def main():
     global allTokens
