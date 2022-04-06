@@ -8,6 +8,8 @@ from pymongo import DeleteMany
 from pyhmy import account
 import pandas as pd
 import csv
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
 
 # Header information to be used while scraping
 headers = {
@@ -20,8 +22,7 @@ main_net_shard_0 = 'https://rpc.s0.t.hmny.io'
 
 
 # Max heroid upto which we wish to fetch hero data
-maxHeroId = 100
-
+maxHeroId = 130000
 # header row
 titles = ['heroID', 'userName', 'walletAddr', 'mainClass', 'Level', 'Summoner', 'Assistant', 'Main class', 'Sub class', 'Profession',
           'Gender', 'Element', 'Xp', 'Level', 'Hp', 'Mp', 'Sp', 'Stamina', 'Summons', 'Stat boost1', 'Stat boost2',
@@ -102,6 +103,7 @@ def mongoimport(csv_path, db_name, collection_name, db_url='localhost', db_port=
     print("Records inserted: " + str(dcount))
 
 def main():
+    print(f"job started!{datetime.now()}")
     global allTokens
 
     # create a pool of 20 processes to run multiprocessing
@@ -125,6 +127,16 @@ def main():
     print("Program ended at: ", endTime)
     elapsedTime = endTime - startTime
     print("Program running time: ", elapsedTime, " seconds")
-    
+    print(f"job ended!{datetime.now()}")
+
 if __name__ == "__main__":
-    main()
+    schedular = BackgroundScheduler()
+    schedular.add_job(main,'cron',day_of_week='sat', hour='20')
+    schedular.start()
+    try:
+        while True:
+            time.sleep(10)
+    except (KeyboardInterrupt, SystemExit):
+        print('Suspending the job')
+        schedular.shutdown()
+    # main()

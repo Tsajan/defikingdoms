@@ -1,5 +1,7 @@
+APScheduler==3.9.1
 async-generator==1.10
 attrs==21.4.0
+backports.zoneinfo==0.2.1
 beautifulsoup4==4.10.0
 bitarray==1.2.2
 certifi==2021.10.8
@@ -28,7 +30,6 @@ outcome==1.1.0
 packaging==21.3
 pandas==1.4.1
 parsimonious==0.8.1
-pathlib==1.0.1
 pexpect==4.8.0
 Pillow==9.0.1
 ptyprocess==0.7.0
@@ -40,6 +41,7 @@ pyOpenSSL==22.0.0
 pyparsing==3.0.7
 python-dateutil==2.8.2
 pytz==2021.3
+pytz-deprecation-shim==0.1.0.post0
 requests==2.27.1
 rlp==2.0.1
 scipy==1.8.0
@@ -52,5 +54,7 @@ soupsieve==2.3.1
 toolz==0.11.2
 trio==0.19.0
 trio-websocket==0.9.2
+tzdata==2022.1
+tzlocal==4.2
 urllib3==1.26.8
 wsproto==1.0.0

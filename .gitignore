@@ -137,3 +137,4 @@ mongodb/database
 
 # Files to ignore
 dfkHeroData.csv
+.DS_Store
